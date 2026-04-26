@@ -35,6 +35,8 @@ ENV/
 # Project Specific
 data/*
 !data/.gitkeep
+!data/image/
+!data/image/*
 storage/resumes/*
 !storage/resumes/.gitkeep
 checklist/cache/*
