@@ -50,7 +50,7 @@ if not st.session_state.splash_done:
     st.markdown("<br><br><br><br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        st.image(r"C:\Users\rohit\.gemini\antigravity\brain\2c0f0e09-7b5e-4e54-8dde-f335379bcabe\media__1777190244935.jpg", use_container_width=True)
+        st.image("logo.jpg", use_container_width=True)
         st.markdown("<h2 style='text-align: center;'>Loading Vision Board Resume X...</h2>", unsafe_allow_html=True)
         with st.spinner("Initializing models..."):
             time.sleep(2.5)
@@ -89,7 +89,7 @@ if not st.session_state.logged_in:
     # Display Auth Flow
     col1, col2, col3 = st.columns([1, 2, 1])
     with col2:
-        st.image(r"C:\Users\rohit\.gemini\antigravity\brain\2c0f0e09-7b5e-4e54-8dde-f335379bcabe\media__1777190244935.jpg", width=150)
+        st.image("logo.jpg", width=150)
         st.title("Vision Board Resume X")
         st.markdown("### Login to access the Evaluation Engine")
         
@@ -113,7 +113,7 @@ else:
     # --- Main Application Dashboard ---
     col_title, col_logout = st.columns([4, 1])
     with col_title:
-        st.image(r"C:\Users\rohit\.gemini\antigravity\brain\2c0f0e09-7b5e-4e54-8dde-f335379bcabe\media__1777190244935.jpg", width=100)
+        st.image("logo.jpg", width=100)
         st.title("Vision Board Resume X")
         st.markdown("### Intelligent Resume Evaluation & Compliance Engine")
     with col_logout:
