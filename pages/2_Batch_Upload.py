@@ -24,6 +24,10 @@ from core.report_generator import generate_pdf_report
 
 st.set_page_config(page_title="Batch Upload", page_icon="📦", layout="wide")
 
+if "logged_in" not in st.session_state or not st.session_state.logged_in:
+    st.warning("Please log in from the main page to access this feature.")
+    st.stop()
+
 # ── Constants ──────────────────────────────────────────────────────────────────
 MAX_FILES = 25
 ALLOWED_EXTS = {".pdf", ".docx", ".png", ".jpg", ".jpeg"}

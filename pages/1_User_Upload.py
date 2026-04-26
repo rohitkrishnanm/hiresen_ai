@@ -12,6 +12,10 @@ from core.scoring import calculate_overall_score, normalize_llm_score
 
 st.set_page_config(page_title="Upload Resume", page_icon="📄", layout="wide")
 
+if "logged_in" not in st.session_state or not st.session_state.logged_in:
+    st.warning("Please log in from the main page to access this feature.")
+    st.stop()
+
 st.title("📄 Upload Resume")
 st.markdown("Submit a single resume for instant AI evaluation and compliance scoring.")
 
