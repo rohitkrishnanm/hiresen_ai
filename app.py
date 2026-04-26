@@ -50,7 +50,7 @@ if not st.session_state.splash_done:
     st.markdown("<br><br><br><br>", unsafe_allow_html=True)
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        st.image("logo.jpg", use_container_width=True)
+        st.image("logo.jpg", width=250)
         st.markdown("<h2 style='text-align: center;'>Loading Vision Board Resume X...</h2>", unsafe_allow_html=True)
         with st.spinner("Initializing models..."):
             time.sleep(2.5)
