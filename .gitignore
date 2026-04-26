@@ -45,7 +45,8 @@ checklist/cache/*
 # Ignore test and temporary files in root
 *.pdf
 *.docx
-*_db.py
+delete_db.py
+fix_db.py
 test_gpt5.py
 tests/
 
