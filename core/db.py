@@ -267,6 +267,5 @@ def get_latest_checklist_version() -> Optional[Dict]:
     finally:
         conn.close()
 
-# Initialize on module load if allowed, or call explicitly
-if __name__ == "__main__":
-    init_db()
+# Initialize database automatically so it works on Streamlit Cloud
+init_db()
