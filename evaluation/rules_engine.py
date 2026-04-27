@@ -10,156 +10,228 @@ class RuleResult:
     passed: bool
     violation_message: Optional[str] = None
 
+
+# ── Hardcoded fallback rules based on Vision Board checklist ──────────────────
+HARDCODED_RULES = [
+    {
+        "id": "R001_FILENAME",
+        "type": "regex_match",
+        "target": "filename",
+        "pattern": r"^RESUME[\s_]+AZURE[\s_]+DATA[\s_]+ENGINEER[\s_]+.+(\.(pdf|docx|PDF|DOCX))?$",
+        "description": "Filename must match format: RESUME AZURE DATA ENGINEER_NAME"
+    },
+    {
+        "id": "R002_MANDATORY_SECTIONS",
+        "type": "section_presence",
+        "target": "text_content",
+        "required_sections": [
+            {"name": "PROFESSIONAL SUMMARY", "aliases": ["SUMMARY", "PROFILE", "OBJECTIVE", "ABOUT ME"]},
+            {"name": "SKILLSET",             "aliases": ["SKILLS", "TECHNICAL SKILLS", "COMPETENCIES", "CORE COMPETENCIES"]},
+            {"name": "WORK EXPERIENCE",      "aliases": ["EXPERIENCE", "WORK HISTORY", "EMPLOYMENT", "PROFESSIONAL EXPERIENCE"]},
+            {"name": "CERTIFICATIONS",       "aliases": ["CERTIFICATIONS", "CERTIFICATION", "CREDENTIALS", "CERTIFICATES"]},
+            {"name": "EDUCATION",            "aliases": ["EDUCATION", "ACADEMIC", "QUALIFICATIONS", "ACADEMICS"]},
+            {"name": "PERSONAL DETAILS",     "aliases": ["PERSONAL", "CONTACT", "DETAILS", "CONTACT INFO", "PERSONAL INFO"]},
+        ],
+        "description": "Resume must contain: Summary, Skills, Experience, Certifications, Education, Contact Details"
+    },
+    {
+        "id": "R003_CONTACT_INFO",
+        "type": "multi_keyword_any",
+        "target": "text_content",
+        "groups": [
+            {"name": "Email",    "keywords": ["@gmail", "@yahoo", "@outlook", "@hotmail", ".com", "@"]},
+            {"name": "Phone",    "keywords": ["+91", "+1", "mobile", "phone", "cell"]},
+            {"name": "LinkedIn", "keywords": ["linkedin.com", "linkedin", "linked in"]},
+        ],
+        "description": "Resume must include Email, Phone number, and LinkedIn profile link"
+    },
+    {
+        "id": "R004_MANDATORY_KEYWORDS",
+        "type": "keyword_presence",
+        "target": "text_content",
+        "keywords": ["azure", "sql", "python", "pyspark", "databricks"],
+        "description": "Resume must contain core Azure Data Engineer keywords: Azure, SQL, Python, PySpark, Databricks"
+    },
+    {
+        "id": "R005_ROLE_TITLE",
+        "type": "keyword_any",
+        "target": "text_content",
+        "keywords": ["azure data engineer", "data engineer"],
+        "description": "Must explicitly mention the role: Azure Data Engineer"
+    },
+    {
+        "id": "R006_CERTIFICATIONS",
+        "type": "keyword_any",
+        "target": "text_content",
+        "keywords": [
+            "dp-900", "dp 900", "azure data fundamentals",
+            "dp-700", "dp 700", "fabric data engineer",
+            "databricks certified", "databricks associate",
+            "databricks fundamentals", "lakehouse fundamentals",
+            "databricks genai", "generative ai fundamentals",
+        ],
+        "description": "Must contain at least one relevant certification (DP-900, DP-700, Databricks, etc.)"
+    },
+    {
+        "id": "R007_EXPERIENCE_DETAIL",
+        "type": "bullet_count",
+        "target": "sections.experience",
+        "min": 10,
+        "description": "Work Experience must contain at least 10 detailed bullet points / responsibilities"
+    },
+    {
+        "id": "R008_ADF_MENTIONED",
+        "type": "keyword_any",
+        "target": "text_content",
+        "keywords": ["adf", "azure data factory", "data factory"],
+        "description": "Azure Data Factory (ADF) should be mentioned in the resume"
+    },
+    {
+        "id": "R009_PAGE_COUNT",
+        "type": "range",
+        "target": "page_count",
+        "min": 1,
+        "max": 3,
+        "description": "Resume should be 1-3 pages (1pg: 0-5yrs, 2pg: 5-10yrs, 3pg: 10+yrs)"
+    },
+]
+
+
 class RulesEngine:
     def __init__(self, rules: List[Dict] = None):
         if rules is not None:
-             self.rules = rules
-             self.version_id = None # Manual override, version unknown
+            self.rules = rules
+            self.version_id = None
         else:
-            # Fetch active rules from DB
+            # 1. Try Supabase DB for synced rules
             checklist_data = get_latest_checklist_version()
             if checklist_data and checklist_data.get('rules_json'):
-                self.rules = json.loads(checklist_data['rules_json'])
-                self.version_id = checklist_data['id']
-            else:
-                # Fallback (or empty) if no sync yet
-                print("Warning: No active checklist found. Using default empty rules.")
-                self.rules = []
-                self.version_id = None
+                try:
+                    db_rules = json.loads(checklist_data['rules_json'])
+                    if db_rules:
+                        self.rules = db_rules
+                        self.version_id = checklist_data['id']
+                        print(f"Rules Engine: Loaded {len(self.rules)} rules from Supabase (version: {self.version_id})")
+                        return
+                except Exception:
+                    pass
+
+            # 2. Try fetching live from Google Docs
+            try:
+                from checklist.parser_google_doc import GoogleDocParser
+                from core.config import Config
+                if Config.GOOGLE_DOC_ID:
+                    parser = GoogleDocParser()
+                    result = parser.fetch_and_parse()
+                    if result and result.get("rules"):
+                        self.rules = result["rules"]
+                        self.version_id = "live_from_google_doc"
+                        print(f"Rules Engine: Loaded {len(self.rules)} rules live from Google Docs")
+                        return
+            except Exception as e:
+                print(f"Rules Engine: Could not fetch from Google Docs: {e}")
+
+            # 3. Use hardcoded fallback rules
+            print("Rules Engine: Using hardcoded Vision Board checklist rules (fallback).")
+            self.rules = HARDCODED_RULES
+            self.version_id = "hardcoded_v1"
 
     def evaluate(self, parsed_data: Dict[str, Any]) -> Dict[str, Any]:
-        """
-        Runs the parsing data against the active rules configurations.
-        """
         violations = []
         checklist_scan = []
         total_rules = len(self.rules)
         rule_scores = 0
-        
+
         full_text = parsed_data.get("text_content", "") or parsed_data.get("text", "")
         full_text_upper = full_text.upper()
 
         def contains_phrase(needle: str) -> bool:
-            normalized_needle = needle.upper().strip()
-            if not normalized_needle:
+            normalized = needle.upper().strip()
+            if not normalized:
                 return False
-            if " " in normalized_needle:
-                return normalized_needle in full_text_upper
-            return re.search(rf"\b{re.escape(normalized_needle)}\b", full_text_upper) is not None
+            if " " in normalized:
+                return normalized in full_text_upper
+            return re.search(rf"\b{re.escape(normalized)}\b", full_text_upper) is not None
 
         for rule in self.rules:
             is_violation = False
             violation_msg = ""
             rule_id = rule.get('id', 'UNKNOWN')
             rule_desc = rule.get('description', 'No description available')
-            
-            # --- Rule Type Dispatch ---
-            
+
             # 1. Regex Match (Filename)
             if rule['type'] == 'regex_match':
                 target_val = parsed_data.get(rule['target'], "")
                 if not re.search(rule['pattern'], target_val, re.IGNORECASE):
                     is_violation = True
-                    violation_msg = f"{rule['description']} (Found: {target_val})"
+                    violation_msg = f"{rule['description']} — Found: '{target_val}'"
 
             # 2. Section Presence
             elif rule['type'] == 'section_presence':
-                # Check for presence of ANY valid alias for each required section
                 missing_sections = []
                 for sec_def in rule['required_sections']:
-                    # sec_def is eq {"name": "SUMMARY", "aliases": ["SUMMARY", "PROFILE"...]}
-                    found_alias = False
-                    
                     aliases = sec_def.get('aliases', [sec_def.get('name')])
-                    for alias in aliases:
-                        if alias.upper() in full_text_upper:
-                            found_alias = True
-                            break
-                    
+                    found_alias = any(alias.upper() in full_text_upper for alias in aliases)
                     if not found_alias:
                         missing_sections.append(sec_def['name'])
-                
                 if missing_sections:
                     is_violation = True
                     violation_msg = f"Missing sections: {', '.join(missing_sections)}"
 
-            # 3. Keyword Presence (All Required)
+            # 3. Keyword Presence (ALL required)
             elif rule['type'] == 'keyword_presence':
-                missing_kws = []
-                for kw in rule['keywords']:
-                    if not contains_phrase(kw):
-                        missing_kws.append(kw)
-                
+                missing_kws = [kw for kw in rule['keywords'] if not contains_phrase(kw)]
                 if missing_kws:
                     is_violation = True
                     violation_msg = f"Missing mandatory keywords: {', '.join(missing_kws)}"
 
-            # 4. Keyword Any (At least one)
+            # 4. Keyword Any (at least one)
             elif rule['type'] == 'keyword_any':
-                found_one = False
-                for kw in rule['keywords']:
-                    if contains_phrase(kw):
-                        found_one = True
-                        break
-                
+                found_one = any(contains_phrase(kw) for kw in rule['keywords'])
                 if not found_one:
                     is_violation = True
                     violation_msg = rule['description']
 
-            # 5. Numeric Range (Page Count)
+            # 5. Multi-keyword groups (each group must have at least one match)
+            elif rule['type'] == 'multi_keyword_any':
+                missing_groups = []
+                for group in rule.get('groups', []):
+                    found = any(kw.upper() in full_text_upper for kw in group['keywords'])
+                    if not found:
+                        missing_groups.append(group['name'])
+                if missing_groups:
+                    is_violation = True
+                    violation_msg = f"Missing contact info: {', '.join(missing_groups)}"
+
+            # 6. Numeric Range (Page Count)
             elif rule['type'] == 'range':
                 val = parsed_data.get(rule['target'], 0)
                 mn = rule.get('min', 0)
                 mx = rule.get('max', 999)
                 if not (mn <= val <= mx):
                     is_violation = True
-                    violation_msg = f"Value {val} is outside valid range {mn}-{mx}"
+                    violation_msg = f"Page count is {val} — expected between {mn} and {mx}"
 
-            # 6. Specific Role Title Presence (in Experience)
-            elif rule['type'] == 'role_title':
-                exp_text = parsed_data.get("sections", {}).get("experience", "").upper()
-                target_role = rule['title'].upper()
-                if target_role not in exp_text:
-                    is_violation = True
-                    violation_msg = f"Role '{rule['title']}' not found in Work Experience."
-
-            # 7. Min Bullet Points
+            # 7. Bullet Point Count
             elif rule['type'] == 'bullet_count':
                 exp_text = parsed_data.get("sections", {}).get("experience", "")
                 if not exp_text:
-                     count = 0 
+                    count = 0
                 else:
-                    # Heuristic: Count punctuation like •, -, * or simply splitting by newline chunks if parser preserved them.
-                    # Since parser normalizes, splitting by sentences or bullet chars is safer.
-                    # However, typical normalization reduces newlines. Inspecting parser output, we replaced \s+ with ' '.
-                    # This makes bullet counting HARD on normalized text.
-                    # FIX: We should rely on "long segments" or assume parser logic needs adjustment.
-                    # FALLBACK: We check if text length > X chars relative to points, or regex match bullet-like patterns.
-                    # Better Regex for normalized bullets: (•|-|\*) or just look for sentence endings.
-                    # Given simple normalization, let's look for known bullet chars or just rough length estimate.
-                    # A better way: Count "sentences" approx.
                     sentences = [s for s in re.split(r'[.!?•\n]', exp_text) if len(s.strip()) > 10]
                     count = len(sentences)
-                
                 if count < rule['min']:
                     is_violation = True
-                    violation_msg = f"Insufficient detail in Experience. Found approx {count} points, required {rule['min']}."
+                    violation_msg = f"Only ~{count} bullet points found in Experience — need at least {rule['min']}"
 
             # 8. Highlighted Keywords
             elif rule['type'] == 'highlighted_keywords':
                 highlighted_set = set(parsed_data.get('highlighted_tokens', []))
-                # Check which of the required keywords appear in the highlighted set
                 missing_highlights = []
                 for kw in rule['keywords']:
-                    # Simple substring match in highlights
-                    found = False
-                    for h_tok in highlighted_set:
-                        if kw.lower() in h_tok:
-                            found = True
-                            break
+                    found = any(kw.lower() in h_tok for h_tok in highlighted_set)
                     if not found:
                         missing_highlights.append(kw)
-                
                 if missing_highlights:
                     is_violation = True
                     violation_msg = f"Keywords not highlighted (Bold/Caps): {', '.join(missing_highlights)}"
@@ -168,12 +240,12 @@ class RulesEngine:
                 is_violation = True
                 violation_msg = f"Unsupported rule type: {rule.get('type', 'unknown')}"
 
-            # --- Result Aggregation ---
+            # Aggregate results
             if is_violation:
                 violations.append({
                     "rule_id": rule_id,
                     "violation_message": violation_msg,
-                    "criticality": "high" # default
+                    "criticality": "high"
                 })
                 checklist_scan.append({
                     "rule_id": rule_id,
@@ -190,7 +262,6 @@ class RulesEngine:
                     "details": "Rule passed",
                 })
 
-        # Calculate Score (0-100)
         final_score = (rule_scores / total_rules * 100) if total_rules > 0 else 100.0
 
         return {
