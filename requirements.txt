@@ -11,7 +11,7 @@ google-api-python-client==2.116.0
 google-auth-httplib2==0.2.0
 google-auth-oauthlib==1.2.0
 tenacity==8.2.3
-pydantic==2.6.1
+pydantic>=2.11.7
 chromadb==0.4.22
 supabase>=2.29.0
 websockets>=14.0
