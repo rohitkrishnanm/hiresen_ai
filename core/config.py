@@ -88,10 +88,6 @@ class Config:
     OPENAI_API_KEY             = os.getenv("OPENAI_API_KEY")
     GOOGLE_SERVICE_ACCOUNT_JSON = os.getenv("GOOGLE_SERVICE_ACCOUNT_JSON")
     GOOGLE_DOC_ID              = os.getenv("GOOGLE_DOC_ID")
-    GOOGLE_DOC_URL             = (
-        f"https://docs.google.com/document/d/{GOOGLE_DOC_ID}/export?format=txt"
-        if GOOGLE_DOC_ID else None
-    )
     ADMIN_PASSWORD_HASH        = os.getenv("ADMIN_PASSWORD_HASH")
 
     # Supabase Database Keys

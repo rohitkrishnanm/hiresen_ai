@@ -15,7 +15,11 @@ except ImportError:
 
 class GoogleDocParser:
     def __init__(self):
-        self.url = Config.GOOGLE_DOC_URL
+        doc_id = Config.GOOGLE_DOC_ID
+        self.url = (
+            f"https://docs.google.com/document/d/{doc_id}/export?format=txt"
+            if doc_id else None
+        )
 
     def fetch_and_parse(self) -> Dict[str, Any]:
         """
