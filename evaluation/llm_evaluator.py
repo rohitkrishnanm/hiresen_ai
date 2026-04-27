@@ -106,16 +106,23 @@ class LLMEvaluator:
         """
 
         try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[
+            # Build params - o-series models don't support temperature or response_format
+            model = self.model
+            is_o_series = model.startswith("o1") or model.startswith("o3") or model.startswith("o4") or model.startswith("gpt-5")
+            
+            params = {
+                "model": model,
+                "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message}
                 ],
-                response_format={"type": "json_object"},
-                temperature=0.1,
-                max_completion_tokens=2800
-            )
+                "max_completion_tokens": 4096,
+            }
+            if not is_o_series:
+                params["response_format"] = {"type": "json_object"}
+                params["temperature"] = 0.1
+            
+            response = self.client.chat.completions.create(**params)
             
             content = response.choices[0].message.content
             data = json.loads(content)

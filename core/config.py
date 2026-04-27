@@ -99,7 +99,7 @@ class Config:
     SUPABASE_KEY               = os.getenv("SUPABASE_KEY")
 
     # Model
-    MODEL_NAME = "gpt-5"
+    MODEL_NAME = "gpt-5.4-mini"
 
     @staticmethod
     def validate():
