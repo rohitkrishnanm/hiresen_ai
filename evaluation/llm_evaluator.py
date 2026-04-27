@@ -125,6 +125,8 @@ class LLMEvaluator:
             return self._coerce_output(data)
 
         except Exception as e:
+            import streamlit as st
+            st.error(f"OpenAI API Error: {str(e)}")
             print(f"LLM Evaluation Error: {e}")
             return self._get_dummy_output()
 
