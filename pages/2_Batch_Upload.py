@@ -183,18 +183,17 @@ if submitted:
         st.warning("Please upload at least one file.")
         st.stop()
 
-    # Validate magic bytes
+    # Validate file extension
     valid_list = []
     skipped = []
     for fname, fbytes in file_list:
-        mime = detect_mime(fbytes)
-        if mime is not None:
+        if ext_ok(fname):
             valid_list.append((fname, fbytes))
         else:
             skipped.append(fname)
 
     if skipped:
-        st.warning(f"⚠️ Skipped {len(skipped)} file(s) with invalid/unrecognised content: {', '.join(skipped)}")
+        st.warning(f"⚠️ Skipped {len(skipped)} file(s) with invalid extensions: {', '.join(skipped)}")
 
     if not valid_list:
         st.error("No processable files remain after validation.")
