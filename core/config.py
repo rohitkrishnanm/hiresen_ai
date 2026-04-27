@@ -60,6 +60,12 @@ def _load_streamlit_secrets():
                 if secret_key in secrets["google"] and not os.environ.get(env_key):
                     os.environ[env_key] = str(secrets["google"][secret_key])
 
+        # ── Nested [supabase] section ─────────────────────────────────────────
+        if "supabase" in secrets:
+            for key in ("SUPABASE_URL", "SUPABASE_KEY"):
+                if key in secrets["supabase"] and not os.environ.get(key):
+                    os.environ[key] = str(secrets["supabase"][key])
+
         # ── Nested [admin] section ────────────────────────────────────────────
         if "admin" in secrets:
             for key in ("ADMIN_USERNAME", "ADMIN_PASSWORD_HASH"):
