@@ -5,11 +5,40 @@ import json
 
 # ── Utility helpers ────────────────────────────────────────────────────────────
 
+# Characters that look like latin-1 equivalents
+_UNICODE_MAP = str.maketrans({
+    '\u2019': "'",   # right single quotation mark
+    '\u2018': "'",   # left single quotation mark
+    '\u201c': '"',   # left double quotation mark
+    '\u201d': '"',   # right double quotation mark
+    '\u2013': '-',   # en dash
+    '\u2014': '-',   # em dash
+    '\u2022': '-',   # bullet
+    '\u2026': '...', # ellipsis
+    '\u00e2': 'a',   # a with circumflex
+    '\u00e9': 'e',   # e with acute
+    '\u00e8': 'e',   # e with grave
+    '\u00e0': 'a',   # a with grave
+    '\u00fc': 'u',   # u with umlaut
+    '\u00f6': 'o',   # o with umlaut
+    '\u00e4': 'a',   # a with umlaut
+    '\u2192': '->',  # right arrow
+    '\u2713': 'OK',  # check mark
+    '\u00b7': '-',   # middle dot
+})
+
+
+def _sanitize(text: str) -> str:
+    """Transliterate common unicode to ASCII/latin-1; drop everything else."""
+    text = text.translate(_UNICODE_MAP)
+    return text.encode('latin-1', errors='replace').decode('latin-1')
+
+
 def _safe_text(value, fallback="N/A"):
     if value is None:
         return fallback
     text = str(value).strip()
-    return text if text else fallback
+    return _sanitize(text) if text else fallback
 
 
 def _safe_llm_payload(data):
