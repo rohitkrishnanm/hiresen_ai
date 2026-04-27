@@ -124,33 +124,32 @@ if "batch_results" not in st.session_state:
     st.session_state["batch_results"] = []
 
 # ── Upload form ────────────────────────────────────────────────────────────────
-with st.form("batch_form"):
-    vendor_name = st.text_input("Vendor / Company (applied to all)", placeholder="Tech Solutions Inc")
+vendor_name = st.text_input("Vendor / Company (applied to all)", placeholder="Tech Solutions Inc")
 
-    upload_mode = st.radio(
-        "Upload mode",
-        ["📁 Multiple individual files", "🗜️ ZIP archive"],
-        horizontal=True,
+upload_mode = st.radio(
+    "Upload mode",
+    ["📁 Multiple individual files", "🗜️ ZIP archive"],
+    horizontal=True,
+)
+
+if upload_mode == "📁 Multiple individual files":
+    uploaded_files = st.file_uploader(
+        f"Select up to {MAX_FILES} resume files",
+        type=["pdf", "docx", "png", "jpg", "jpeg"],
+        accept_multiple_files=True,
     )
+    zip_file = None
+else:
+    zip_file = st.file_uploader("Upload a ZIP archive of resumes", type=["zip"])
+    uploaded_files = []
 
-    if upload_mode == "📁 Multiple individual files":
-        uploaded_files = st.file_uploader(
-            f"Select up to {MAX_FILES} resume files",
-            type=["pdf", "docx", "png", "jpg", "jpeg"],
-            accept_multiple_files=True,
-        )
-        zip_file = None
-    else:
-        zip_file = st.file_uploader("Upload a ZIP archive of resumes", type=["zip"])
-        uploaded_files = []
+st.caption(
+    "💡 Candidate names are inferred from filenames "
+    "(e.g. `John_Doe_Resume.pdf` → *John Doe*). "
+    "You can rename them in the leaderboard before saving."
+)
 
-    st.caption(
-        "💡 Candidate names are inferred from filenames "
-        "(e.g. `John_Doe_Resume.pdf` → *John Doe*). "
-        "You can rename them in the leaderboard before saving."
-    )
-
-    submitted = st.form_submit_button("🚀 Evaluate All Resumes", use_container_width=True)
+submitted = st.button("🚀 Evaluate All Resumes", use_container_width=True)
 
 
 # ── Resolve file list ──────────────────────────────────────────────────────────
