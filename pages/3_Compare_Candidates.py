@@ -8,10 +8,9 @@ import datetime
 
 import pandas as pd
 import streamlit as st
+st.set_page_config(page_title="Compare Candidates", page_icon="⚖️", layout="wide")
 
 from core.db import get_all_submissions
-
-st.set_page_config(page_title="Compare Candidates", page_icon="⚖️", layout="wide")
 
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
     st.warning("Please log in from the main page to access this feature.")

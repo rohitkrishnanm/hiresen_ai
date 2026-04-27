@@ -13,6 +13,7 @@ from typing import List, Optional, Tuple
 
 import pandas as pd
 import streamlit as st
+st.set_page_config(page_title="Batch Upload", page_icon="📦", layout="wide")
 
 from core.db import save_evaluation
 from core.scoring import calculate_overall_score, normalize_llm_score
@@ -21,8 +22,6 @@ from evaluation.resume_parser import ResumeParser
 from evaluation.rules_engine import RulesEngine
 from core.vector_db import VectorDBClient
 from core.report_generator import generate_pdf_report
-
-st.set_page_config(page_title="Batch Upload", page_icon="📦", layout="wide")
 
 if "logged_in" not in st.session_state or not st.session_state.logged_in:
     st.warning("Please log in from the main page to access this feature.")

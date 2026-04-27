@@ -114,7 +114,7 @@ class LLMEvaluator:
                 ],
                 response_format={"type": "json_object"},
                 temperature=0.1,
-                max_tokens=2800
+                max_completion_tokens=2800
             )
             
             content = response.choices[0].message.content

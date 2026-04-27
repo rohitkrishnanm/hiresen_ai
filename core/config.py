@@ -22,7 +22,12 @@ def _load_streamlit_secrets():
     """
     try:
         import streamlit as st
-
+        import os
+        
+        # Prevent Streamlit from throwing the red warning if there are no secrets
+        if not os.path.exists(".streamlit/secrets.toml") and not os.environ.get("STREAMLIT_SERVER_ENVIRONMENT"):
+            return
+            
         secrets = st.secrets
 
         # ── Flat keys (top-level) ──────────────────────────────────────────────
@@ -32,6 +37,8 @@ def _load_streamlit_secrets():
             "GOOGLE_SERVICE_ACCOUNT_JSON",
             "ADMIN_USERNAME",
             "ADMIN_PASSWORD_HASH",
+            "SUPABASE_URL",
+            "SUPABASE_KEY",
         ]
         for key in flat_keys:
             if key in secrets and not os.environ.get(key):
@@ -59,6 +66,8 @@ def _load_streamlit_secrets():
                 if key in secrets["admin"] and not os.environ.get(key):
                     os.environ[key] = str(secrets["admin"][key])
 
+    except FileNotFoundError:
+        pass
     except Exception:
         # Not running in Streamlit (e.g., during unit tests), silently skip.
         pass
@@ -78,6 +87,10 @@ class Config:
         if GOOGLE_DOC_ID else None
     )
     ADMIN_PASSWORD_HASH        = os.getenv("ADMIN_PASSWORD_HASH")
+
+    # Supabase Database Keys
+    SUPABASE_URL               = os.getenv("SUPABASE_URL")
+    SUPABASE_KEY               = os.getenv("SUPABASE_KEY")
 
     # Model
     MODEL_NAME = "gpt-5"
