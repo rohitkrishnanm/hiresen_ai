@@ -64,11 +64,16 @@ HARDCODED_RULES = [
         "type": "keyword_any",
         "target": "text_content",
         "keywords": [
-            "dp-900", "dp 900", "azure data fundamentals",
-            "dp-700", "dp 700", "fabric data engineer",
-            "databricks certified", "databricks associate",
-            "databricks fundamentals", "lakehouse fundamentals",
-            "databricks genai", "generative ai fundamentals",
+            "dp-900", "dp 900", "azure data fundamentals", "microsoft azure data fundamentals",
+            "dp-700", "dp 700", "fabric data engineer", "microsoft fabric data engineer associate",
+            "databricks certified", "databricks associate", "databricks certified data engineer associate",
+            "databricks fundamentals", "lakehouse fundamentals", "databricks lakehouse fundamentals",
+            "databricks genai", "generative ai fundamentals", "databricks genai fundamental", "databricks generative ai fundamentals",
+            "dp-900/microsoft azure data fundamentals",
+            "dp-700/microsoft fabric data engineer associate",
+            "databricks certified data engineer associate/databricks certified data engineer associate",
+            "databricks fundamentals/databricks lakehouse fundamentals",
+            "databricks genai fundamental/databricks generative ai fundamentals"
         ],
         "description": "Must contain at least one relevant certification (DP-900, DP-700, Databricks, etc.)"
     },
