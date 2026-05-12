@@ -11,8 +11,8 @@ import uuid
 import concurrent.futures
 from typing import List, Optional, Tuple
 
-import pandas as pd
-import streamlit as st
+#import pandas as pd
+#import streamlit as st
 st.set_page_config(page_title="Batch Upload", page_icon="📦", layout="wide")
 
 from core.db import save_evaluation
